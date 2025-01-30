@@ -13,17 +13,18 @@ interface Stats {
 }
 
 const calculateLevel = (completedTasks: number, totalCounts: number): Stats['level'] => {
-  if (completedTasks >= 10 && totalCounts >= 50) return 'Expert';
-  if (completedTasks >= 5 && totalCounts >= 25) return 'Intermediate';
+  // Updated thresholds for level progression
+  if (completedTasks >= 5) return 'Expert';
+  if (completedTasks >= 3) return 'Intermediate';
   return 'Beginner';
 };
 
 const calculateProgress = (level: Stats['level'], completedTasks: number): number => {
   switch (level) {
     case 'Beginner':
-      return Math.min((completedTasks / 5) * 100, 100);
+      return Math.min((completedTasks / 3) * 100, 100);
     case 'Intermediate':
-      return Math.min(((completedTasks - 5) / 5) * 100, 100);
+      return Math.min(((completedTasks - 3) / 2) * 100, 100);
     case 'Expert':
       return 100;
     default:
