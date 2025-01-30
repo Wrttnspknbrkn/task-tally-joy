@@ -24,6 +24,7 @@ interface Task {
   id: string;
   title: string;
   count: number;
+  completed?: boolean;
 }
 
 export const TaskList = () => {
@@ -50,6 +51,7 @@ export const TaskList = () => {
         id: Date.now().toString(),
         title: newTaskTitle,
         count: 0,
+        completed: false,
       };
       setTasks([...tasks, newTask]);
       setNewTaskTitle("");
@@ -61,9 +63,9 @@ export const TaskList = () => {
     setTasks(tasks.filter(task => task.id !== id));
   };
 
-  const updateTask = (id: string, count: number) => {
+  const updateTask = (id: string, count: number, completed?: boolean) => {
     setTasks(tasks.map(task => 
-      task.id === id ? { ...task, count } : task
+      task.id === id ? { ...task, count, completed } : task
     ));
   };
 

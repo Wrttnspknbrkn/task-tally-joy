@@ -9,6 +9,8 @@ export function ThemeToggle() {
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
+    document.documentElement.classList.remove(theme);
+    document.documentElement.classList.add(newTheme);
     toast.success(`${newTheme.charAt(0).toUpperCase() + newTheme.slice(1)} theme activated!`);
   };
 
