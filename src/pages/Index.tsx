@@ -4,40 +4,82 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 
+interface Stats {
+  totalTasks: number;
+  completedTasks: number;
+  totalCounts: number;
+  level: 'Beginner' | 'Intermediate' | 'Expert';
+  progress: number;
+}
+
+const calculateLevel = (completedTasks: number, totalCounts: number): Stats['level'] => {
+  if (completedTasks >= 10 && totalCounts >= 50) return 'Expert';
+  if (completedTasks >= 5 && totalCounts >= 25) return 'Intermediate';
+  return 'Beginner';
+};
+
+const calculateProgress = (level: Stats['level'], completedTasks: number): number => {
+  switch (level) {
+    case 'Beginner':
+      return Math.min((completedTasks / 5) * 100, 100);
+    case 'Intermediate':
+      return Math.min(((completedTasks - 5) / 5) * 100, 100);
+    case 'Expert':
+      return 100;
+    default:
+      return 0;
+  }
+};
+
 const Index = () => {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<Stats>({
     totalTasks: 0,
     completedTasks: 0,
     totalCounts: 0,
-    level: 'Beginner'
+    level: 'Beginner',
+    progress: 0
   });
 
   useEffect(() => {
-    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-    const completed = tasks.filter((t: any) => t.completed).length;
-    const total = tasks.length;
-    const counts = tasks.reduce((acc: number, t: any) => acc + t.count, 0);
-    
-    // Calculate level based on completed tasks and counts
-    let level = 'Beginner';
-    if (completed >= 10 && counts >= 50) level = 'Expert';
-    else if (completed >= 5 && counts >= 25) level = 'Intermediate';
-    
-    setStats({
-      totalTasks: total,
-      completedTasks: completed,
-      totalCounts: counts,
-      level
-    });
+    const updateStats = () => {
+      const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+      const completed = tasks.filter((t: any) => t.completed).length;
+      const total = tasks.length;
+      const counts = tasks.reduce((acc: number, t: any) => acc + t.count, 0);
+      const level = calculateLevel(completed, counts);
+      const progress = calculateProgress(level, completed);
+      
+      setStats({
+        totalTasks: total,
+        completedTasks: completed,
+        totalCounts: counts,
+        level,
+        progress
+      });
+    };
+
+    // Initial update
+    updateStats();
+
+    // Listen for storage changes
+    window.addEventListener('storage', updateStats);
+    const interval = setInterval(updateStats, 1000); // Poll for changes
+
+    return () => {
+      window.removeEventListener('storage', updateStats);
+      clearInterval(interval);
+    };
   }, []);
 
-  const getProgressValue = () => {
-    if (stats.level === 'Beginner') {
-      return (stats.completedTasks / 5) * 100;
-    } else if (stats.level === 'Intermediate') {
-      return (stats.completedTasks / 10) * 100;
+  const getLevelColor = (level: Stats['level']) => {
+    switch (level) {
+      case 'Expert':
+        return 'bg-purple-500 hover:bg-purple-600';
+      case 'Intermediate':
+        return 'bg-blue-500 hover:bg-blue-600';
+      default:
+        return 'bg-green-500 hover:bg-green-600';
     }
-    return 100;
   };
 
   return (
@@ -59,14 +101,25 @@ const Index = () => {
             Track your tasks with style
           </p>
           <div className="flex justify-center gap-2 mt-4">
-            <Badge variant="secondary">{stats.level}</Badge>
-            <Badge variant="outline">{stats.totalTasks} Tasks Created</Badge>
-            <Badge variant="default">{stats.completedTasks} Tasks Completed</Badge>
+            <Badge 
+              className={`${getLevelColor(stats.level)} text-white`}
+            >
+              {stats.level}
+            </Badge>
+            <Badge variant="outline">
+              {stats.totalTasks} Tasks Created
+            </Badge>
+            <Badge variant="secondary">
+              {stats.completedTasks} Tasks Completed
+            </Badge>
+            <Badge variant="secondary">
+              {stats.totalCounts} Total Counts
+            </Badge>
           </div>
           <div className="max-w-md mx-auto mt-6">
-            <Progress value={getProgressValue()} className="h-2" />
+            <Progress value={stats.progress} className="h-2" />
             <p className="text-sm text-muted-foreground mt-2">
-              Level Progress: {Math.round(getProgressValue())}%
+              Level Progress: {Math.round(stats.progress)}%
               {stats.level !== 'Expert' && (
                 <span className="ml-2">
                   ({stats.level === 'Beginner' ? '5' : '10'} tasks to next level)
